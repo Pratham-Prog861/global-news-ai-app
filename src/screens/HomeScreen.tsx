@@ -82,16 +82,20 @@ const HomeScreen = () => {
       source={item.source.name}
       publishedAt={item.publishedAt}
       url={item.url}
-      onSave={() =>
-        saveArticle({
-          title: item.title,
-          description: item.description || "",
-          imageUrl: item.urlToImage,
-          source: item.source.name,
-          publishedAt: item.publishedAt,
-          url: item.url,
-        })
-      }
+      onSave={async () => {
+        try {
+          await saveArticle({
+            title: item.title,
+            description: item.description || "",
+            imageUrl: item.urlToImage,
+            source: item.source.name,
+            publishedAt: item.publishedAt,
+            url: item.url,
+          });
+        } catch (error) {
+          console.warn("Failed to save article", error);
+        }
+      }}
     />
   );
 

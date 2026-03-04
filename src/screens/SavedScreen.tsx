@@ -29,7 +29,11 @@ const SavedScreen = () => {
     try {
       const saved = await getSavedArticles();
       setArticles(saved);
-    } finally {
+    } catch (error) {
+      console.warn("Failed to load saved articles", error);
+      setArticles([]);
+    }
+     finally {
       setLoading(false);
     }
   }, []);
@@ -41,9 +45,13 @@ const SavedScreen = () => {
   );
 
   const handleDelete = async (url: string) => {
-    await deleteArticle(url);
-    setArticles((prev) => prev.filter((a) => a.url !== url));
-  };
+    try {
+      await deleteArticle(url);
+      setArticles((prev) => prev.filter((a) => a.url !== url));
+    } catch (error) {
+      console.warn("Failed to delete saved article", error);
+    }
+  }
 
   const renderItem = ({ item }: { item: SavedArticle }) => (
     <NewsCard
