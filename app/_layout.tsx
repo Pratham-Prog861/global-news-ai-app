@@ -1,5 +1,10 @@
 import { Stack } from "expo-router";
+import ErrorBoundary from "../src/components/ErrorBoundary";
 
 export default function RootLayout() {
-  return <Stack />;
+  return (
+    <ErrorBoundary>
+      <Stack />
+    </ErrorBoundary>
+  );
 }

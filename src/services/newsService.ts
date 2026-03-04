@@ -24,20 +24,45 @@ export const getTopHeadlines = async (
   if (category) params.set("category", category);
 
   try {
-    const response = await fetch(`${BASE_URL}/top-headlines?${params.toString()}`, {
-      headers: {
-        "X-Api-Key": API_KEY,
+    const response = await fetch(
+      `${BASE_URL}/top-headlines?${params.toString()}`,
+      {
+        headers: {
+          "X-Api-Key": API_KEY,
+        },
       },
-    });
+    );
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Invalid API key. Please check your configuration.");
+      }
+      if (response.status === 429) {
+        throw new Error(
+          "Too many requests. Please wait a moment and try again.",
+        );
+      }
+      throw new Error(
+        `Server error (${response.status}). Please try again later.`,
+      );
+    }
 
     const data = await response.json();
 
     if (data.status === "ok") {
-      return data.articles;
+      return data.articles ?? [];
     } else {
-      throw new Error(data.message || "Failed to fetch news");
+      throw new Error(data.message || "Failed to fetch news.");
     }
-  } catch (error) {
+  } catch (error: any) {
+    if (
+      error.name === "TypeError" &&
+      error.message === "Network request failed"
+    ) {
+      throw new Error(
+        "No internet connection. Please check your network and try again.",
+      );
+    }
     console.error("Error fetching news:", error);
     throw error;
   }
