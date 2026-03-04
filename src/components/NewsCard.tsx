@@ -1,7 +1,8 @@
-import { Ionicons } from "@expo/vector-icons";
+﻿import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { useRouter } from "expo-router";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 interface NewsCardProps {
   title: string;
@@ -20,154 +21,175 @@ const NewsCard: React.FC<NewsCardProps> = ({
   imageUrl,
   source,
   publishedAt,
+  url,
   onSave,
   onDelete,
 }) => {
-  const formattedDate = new Date(publishedAt).toLocaleDateString();
+  const router = useRouter();
+  const formattedDate = new Date(publishedAt).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const handlePress = () => {
+    router.push({
+      pathname: "/news/[id]" as any,
+      params: {
+        id: encodeURIComponent(url ?? title),
+        title,
+        description,
+        imageUrl: imageUrl ?? "",
+        source,
+        publishedAt,
+        url: url ?? "",
+      },
+    });
+  };
 
   return (
-    <View style={styles.container}>
+    <Pressable
+      onPress={handlePress}
+      style={({ pressed }) => ({
+        backgroundColor: "#FFFFFF",
+        borderRadius: 18,
+        borderCurve: "continuous",
+        marginBottom: 16,
+        overflow: "hidden",
+        boxShadow: pressed
+          ? "0 1px 4px rgba(0,0,0,0.08)"
+          : "0 2px 12px rgba(0,0,0,0.10)",
+        opacity: pressed ? 0.97 : 1,
+      })}
+    >
       {imageUrl ? (
         <Image
           source={{ uri: imageUrl }}
-          style={styles.image}
+          style={{ width: "100%", height: 200 }}
           contentFit="cover"
-          transition={500}
+          transition={400}
         />
       ) : (
-        <View style={[styles.image, styles.placeholderImage]}>
-          <Text style={styles.placeholderText}>No Image Available</Text>
+        <View
+          style={{
+            width: "100%",
+            height: 120,
+            backgroundColor: "#F2F2F7",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Ionicons name="image-outline" size={36} color="#C7C7CC" />
         </View>
       )}
-      <View style={styles.content}>
-        <View style={styles.metaInfo}>
-          <Text style={styles.sourceText}>{source}</Text>
-          <Text style={styles.dotSeparator}>{" • "}</Text>
-          <Text style={styles.dateText}>{formattedDate}</Text>
+
+      <View style={{ padding: 14, gap: 8 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <Text
+            style={{
+              fontSize: 11,
+              fontWeight: "700",
+              color: "#007AFF",
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+            }}
+          >
+            {source}
+          </Text>
+          <Text style={{ fontSize: 11, color: "#C7C7CC" }}>•</Text>
+          <Text style={{ fontSize: 11, color: "#8E8E93" }}>{formattedDate}</Text>
         </View>
-        <Text style={styles.titleText} numberOfLines={2}>
+
+        <Text
+          numberOfLines={2}
+          style={{
+            fontSize: 17,
+            fontWeight: "700",
+            color: "#1C1C1E",
+            lineHeight: 22,
+            letterSpacing: -0.2,
+          }}
+        >
           {title}
         </Text>
-        {!!description && (
-          <Text style={styles.descriptionText} numberOfLines={3}>
+
+        {!!description && description !== "null" && (
+          <Text
+            numberOfLines={2}
+            style={{ fontSize: 14, color: "#636366", lineHeight: 20 }}
+          >
             {description}
           </Text>
         )}
+
         {(onSave || onDelete) && (
-          <View style={styles.actionRow}>
+          <View
+            style={{
+              flexDirection: "row",
+              marginTop: 4,
+              gap: 8,
+              borderTopWidth: 1,
+              borderTopColor: "#F2F2F7",
+              paddingTop: 10,
+            }}
+          >
             {onSave && (
-              <TouchableOpacity style={styles.actionButton} onPress={onSave}>
-                <Ionicons name="bookmark-outline" size={16} color="#007AFF" />
-                <Text style={styles.actionText}>Save</Text>
-              </TouchableOpacity>
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation?.();
+                  onSave();
+                }}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 5,
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  backgroundColor: pressed ? "#E5F0FF" : "#F0F7FF",
+                  borderWidth: 1.5,
+                  borderColor: "#D0E8FF",
+                })}
+              >
+                <Ionicons name="bookmark-outline" size={15} color="#007AFF" />
+                <Text
+                  style={{ fontSize: 13, fontWeight: "600", color: "#007AFF" }}
+                >
+                  Save
+                </Text>
+              </Pressable>
             )}
             {onDelete && (
-              <TouchableOpacity
-                style={[styles.actionButton, styles.deleteButton]}
-                onPress={onDelete}
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation?.();
+                  onDelete();
+                }}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 5,
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  backgroundColor: pressed ? "#FFE5E5" : "#FFF0F0",
+                  borderWidth: 1.5,
+                  borderColor: "#FFD0D0",
+                })}
               >
-                <Ionicons name="trash-outline" size={16} color="#ff3b30" />
-                <Text style={[styles.actionText, styles.deleteText]}>
+                <Ionicons name="trash-outline" size={15} color="#FF3B30" />
+                <Text
+                  style={{ fontSize: 13, fontWeight: "600", color: "#FF3B30" }}
+                >
                   Remove
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             )}
           </View>
         )}
       </View>
-    </View>
+    </Pressable>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    marginBottom: 20,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: "#f0f0f0",
-  },
-  image: {
-    width: "100%",
-    height: 200,
-  },
-  placeholderImage: {
-    backgroundColor: "#e1e1e1",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  placeholderText: {
-    color: "#888",
-    fontSize: 14,
-  },
-  content: {
-    padding: 16,
-  },
-  metaInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  sourceText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#007AFF",
-    textTransform: "uppercase",
-  },
-  dotSeparator: {
-    fontSize: 12,
-    color: "#999",
-  },
-  dateText: {
-    fontSize: 12,
-    color: "#999",
-  },
-  titleText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1a1a1a",
-    marginBottom: 8,
-    lineHeight: 24,
-  },
-  descriptionText: {
-    fontSize: 14,
-    color: "#4a4a4a",
-    lineHeight: 20,
-  },
-  actionRow: {
-    flexDirection: "row",
-    marginTop: 12,
-    gap: 10,
-  },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: "#007AFF",
-    backgroundColor: "#f0f7ff",
-  },
-  deleteButton: {
-    borderColor: "#ff3b30",
-    backgroundColor: "#fff5f5",
-  },
-  actionText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#007AFF",
-  },
-  deleteText: {
-    color: "#ff3b30",
-  },
-});
-
-export default React.memo(NewsCard);
+export default NewsCard;

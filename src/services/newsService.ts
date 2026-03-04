@@ -20,7 +20,12 @@ export const getTopHeadlines = async (
     throw new Error("Missing EXPO_PUBLIC_NEWS_API_KEY");
   }
 
-  const params = new URLSearchParams({ country });
+  // Include apiKey as query param for compatibility (some networks may strip headers)
+  const params = new URLSearchParams({
+    country,
+    apiKey: API_KEY,
+    pageSize: "20",
+  });
   if (category) params.set("category", category);
 
   try {
@@ -50,7 +55,15 @@ export const getTopHeadlines = async (
     const data = await response.json();
 
     if (data.status === "ok") {
-      return data.articles ?? [];
+      // Filter out articles with [Removed] content (NewsAPI free-tier artifact)
+      const articles: NewsArticle[] = (data.articles ?? []).filter(
+        (a: NewsArticle) =>
+          a.title &&
+          a.title !== "[Removed]" &&
+          a.url &&
+          a.url !== "https://removed.com",
+      );
+      return articles;
     } else {
       throw new Error(data.message || "Failed to fetch news.");
     }

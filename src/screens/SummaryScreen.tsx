@@ -1,18 +1,15 @@
-import { Ionicons } from "@expo/vector-icons";
+﻿import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  SafeAreaView,
+  Pressable,
   ScrollView,
-  StatusBar,
-  StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
-import { summarizeArticles } from "../services/aiService";
-import { NewsArticle } from "../services/newsService";
+import { summarizeArticles } from "@/src/services/aiService";
+import { NewsArticle } from "@/src/services/newsService";
 
 const SummaryScreen = () => {
   const router = useRouter();
@@ -49,213 +46,143 @@ const SummaryScreen = () => {
     generate();
   }, [params.articles]);
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
+  if (loading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 16,
+          backgroundColor: "#F2F2F7",
+        }}
+      >
+        <View
+          style={{
+            width: 72,
+            height: 72,
+            borderRadius: 36,
+            backgroundColor: "#EBF3FF",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
         >
-          <Ionicons name="arrow-back" size={22} color="#007AFF" />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>AI Summary</Text>
-          <Text style={styles.headerSubtitle}>Today&apos;s News Brief</Text>
+          <ActivityIndicator size="large" color="#007AFF" />
         </View>
-        <View style={styles.headerRight}>
-          <Ionicons name="sparkles" size={22} color="#007AFF" />
+        <Text style={{ fontSize: 18, fontWeight: "700", color: "#1C1C1E" }}>
+          Generating Summary
+        </Text>
+        <Text style={{ fontSize: 14, color: "#8E8E93", textAlign: "center" }}>
+          AI is reading today&apos;s top stories…
+        </Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 14,
+          padding: 32,
+          backgroundColor: "#F2F2F7",
+        }}
+      >
+        <Ionicons name="alert-circle-outline" size={56} color="#FF3B30" />
+        <Text style={{ fontSize: 20, fontWeight: "700", color: "#1C1C1E" }}>
+          Something went wrong
+        </Text>
+        <Text
+          style={{
+            fontSize: 15,
+            color: "#636366",
+            textAlign: "center",
+            lineHeight: 22,
+          }}
+        >
+          {error}
+        </Text>
+        <Pressable
+          onPress={() => router.back()}
+          style={{ backgroundColor: "#007AFF", paddingHorizontal: 32, paddingVertical: 12, borderRadius: 24, marginTop: 8 }}
+        >
+          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Go Back</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView
+      contentInsetAdjustmentBehavior="automatic"
+      showsVerticalScrollIndicator={false}
+      style={{ backgroundColor: "#F2F2F7" }}
+      contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 40 }}
+    >
+      {/* Header badge */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+          padding: 14,
+          backgroundColor: "#EBF3FF",
+          borderRadius: 14,
+          borderCurve: "continuous",
+        }}
+      >
+        <Ionicons name="sparkles" size={18} color="#007AFF" />
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 13, fontWeight: "700", color: "#007AFF" }}>
+            AI Generated Summary
+          </Text>
+          <Text style={{ fontSize: 12, color: "#636366", marginTop: 1 }}>
+            Powered by Gemini AI
+          </Text>
         </View>
       </View>
 
-      {/* Content */}
-      {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingTitle}>Generating Summary</Text>
-          <Text style={styles.loadingSubtitle}>
-            AI is reading today&apos;s top stories...
-          </Text>
-        </View>
-      ) : error ? (
-        <View style={styles.center}>
-          <Ionicons name="alert-circle-outline" size={56} color="#FF3B30" />
-          <Text style={styles.errorTitle}>Something went wrong</Text>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => router.back()}
-          >
-            <Text style={styles.retryButtonText}>Go Back</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+      {/* Summary card */}
+      <View
+        style={{
+          backgroundColor: "#FFFFFF",
+          borderRadius: 18,
+          borderCurve: "continuous",
+          padding: 20,
+          boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
+        }}
+      >
+        <Text
+          selectable
+          style={{
+            fontSize: 16,
+            color: "#1C1C1E",
+            lineHeight: 26,
+          }}
         >
-          <View style={styles.summaryCard}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="newspaper-outline" size={20} color="#007AFF" />
-              <Text style={styles.cardHeaderText}>AI Generated</Text>
-            </View>
-            <Text style={styles.summaryText}>{summary}</Text>
-          </View>
+          {summary}
+        </Text>
+      </View>
 
-          <View style={styles.disclaimer}>
-            <Ionicons
-              name="information-circle-outline"
-              size={14}
-              color="#999"
-            />
-            <Text style={styles.disclaimerText}>
-              Summary generated by Gemini AI based on today&apos;s top
-              headlines.
-            </Text>
-          </View>
-        </ScrollView>
-      )}
-    </SafeAreaView>
+      {/* Disclaimer */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "flex-start",
+          gap: 6,
+          paddingHorizontal: 4,
+        }}
+      >
+        <Ionicons name="information-circle-outline" size={14} color="#8E8E93" style={{ marginTop: 1 }} />
+        <Text style={{ flex: 1, fontSize: 12, color: "#8E8E93", lineHeight: 18 }}>
+          Summary generated by Gemini AI based on today&apos;s top headlines. Always verify information from primary sources.
+        </Text>
+      </View>
+    </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f7fa",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: "#ffffff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e1e8ed",
-  },
-  backButton: {
-    padding: 6,
-    borderRadius: 20,
-    backgroundColor: "#f0f7ff",
-    borderWidth: 1.5,
-    borderColor: "#d0e8ff",
-  },
-  headerCenter: {
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#1a1a1a",
-    letterSpacing: -0.3,
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: "#007AFF",
-    fontWeight: "600",
-    marginTop: 1,
-  },
-  headerRight: {
-    padding: 6,
-    borderRadius: 20,
-    backgroundColor: "#f0f7ff",
-    borderWidth: 1.5,
-    borderColor: "#d0e8ff",
-  },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 30,
-  },
-  loadingTitle: {
-    marginTop: 20,
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1a1a1a",
-  },
-  loadingSubtitle: {
-    marginTop: 8,
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
-  },
-  errorTitle: {
-    marginTop: 16,
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#1a1a1a",
-  },
-  errorText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  retryButton: {
-    marginTop: 24,
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 25,
-  },
-  retryButtonText: {
-    color: "#ffffff",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  summaryCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  cardHeaderText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#007AFF",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  summaryText: {
-    fontSize: 15,
-    color: "#1a1a1a",
-    lineHeight: 26,
-  },
-  disclaimer: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 6,
-    marginTop: 16,
-    paddingHorizontal: 4,
-  },
-  disclaimerText: {
-    flex: 1,
-    fontSize: 12,
-    color: "#999",
-    lineHeight: 18,
-  },
-});
 
 export default SummaryScreen;

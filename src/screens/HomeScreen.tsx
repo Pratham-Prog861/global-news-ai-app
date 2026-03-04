@@ -1,41 +1,41 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+﻿import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { useNavigation, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
-  StatusBar,
-  StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
-import NewsCard from "../components/NewsCard";
-import { saveArticle } from "../database/database";
-import { getTopHeadlines, NewsArticle } from "../services/newsService";
+import NewsCard from "@/src/components/NewsCard";
+import { saveArticle } from "@/src/database/database";
+import { getTopHeadlines, NewsArticle } from "@/src/services/newsService";
 
 const COUNTRIES = [
   { code: "us", label: "US", flag: "🇺🇸" },
   { code: "in", label: "IN", flag: "🇮🇳" },
   { code: "gb", label: "GB", flag: "🇬🇧" },
   { code: "au", label: "AU", flag: "🇦🇺" },
+  { code: "ca", label: "CA", flag: "🇨🇦" },
+  { code: "de", label: "DE", flag: "🇩🇪" },
 ];
 
-type CategoryIcon = React.ComponentProps<typeof Ionicons>["name"];
-
-const CATEGORIES: { key: string; label: string; icon: CategoryIcon }[] = [
-  { key: "business", label: "Business", icon: "briefcase-outline" },
-  { key: "technology", label: "Technology", icon: "laptop-outline" },
-  { key: "sports", label: "Sports", icon: "football-outline" },
-  { key: "health", label: "Health", icon: "heart-outline" },
-  { key: "science", label: "Science", icon: "flask-outline" },
+const CATEGORIES = [
+  { key: "business", label: "Business", icon: "briefcase-outline" as const },
+  { key: "technology", label: "Tech", icon: "laptop-outline" as const },
+  { key: "sports", label: "Sports", icon: "football-outline" as const },
+  { key: "health", label: "Health", icon: "heart-outline" as const },
+  { key: "science", label: "Science", icon: "flask-outline" as const },
+  { key: "entertainment", label: "Entertainment", icon: "film-outline" as const },
 ];
 
 const HomeScreen = () => {
   const router = useRouter();
+  const navigation = useNavigation();
   const requestIdRef = useRef(0);
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,13 +51,14 @@ const HomeScreen = () => {
         setRefreshing(true);
       } else {
         setLoading(true);
+        setError(null);
       }
-      setError(null);
 
       try {
         const articles = await getTopHeadlines(country, category);
         if (requestId !== requestIdRef.current) return;
         setNews(articles);
+        setError(null);
       } catch (err: any) {
         if (requestId !== requestIdRef.current) return;
         setError(err.message || "Something went wrong while fetching news.");
@@ -74,8 +75,45 @@ const HomeScreen = () => {
     fetchNews(selectedCountry, selectedCategory);
   }, [selectedCountry, selectedCategory, fetchNews]);
 
+  const handleNavigateToSummary = useCallback(() => {
+    router.push({
+      pathname: "/summary" as any,
+      params: { articles: JSON.stringify(news.slice(0, 10)) },
+    });
+  }, [news, router]);
+
+  // Set header right (AI Summary button)
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable
+          onPress={handleNavigateToSummary}
+          disabled={news.length === 0}
+          style={({ pressed }) => ({
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 5,
+            paddingHorizontal: 12,
+            paddingVertical: 7,
+            borderRadius: 20,
+            backgroundColor: pressed ? "#0062CC" : "#007AFF",
+            opacity: news.length === 0 ? 0.4 : 1,
+          })}
+        >
+          <Ionicons name="sparkles" size={13} color="#fff" />
+          <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700" }}>
+            AI Summary
+          </Text>
+        </Pressable>
+      ),
+    });
+  }, [navigation, handleNavigateToSummary, news.length]);
+
   const handleSave = useCallback(async (item: NewsArticle) => {
     try {
+      if (process.env.EXPO_OS === "ios") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
       await saveArticle({
         title: item.title,
         description: item.description || "",
@@ -84,21 +122,10 @@ const HomeScreen = () => {
         publishedAt: item.publishedAt,
         url: item.url,
       });
-    } catch (error) {
-      console.warn("Failed to save article", error);
+    } catch (err) {
+      console.warn("Failed to save article", err);
     }
   }, []);
-
-  const handleNavigateToSaved = useCallback(() => {
-    router.push("/saved" as any);
-  }, [router]);
-
-  const handleNavigateToSummary = useCallback(() => {
-    router.push({
-      pathname: "/summary" as any,
-      params: { articles: JSON.stringify(news.slice(0, 10)) },
-    });
-  }, [news, router]);
 
   const handleRefresh = useCallback(() => {
     fetchNews(selectedCountry, selectedCategory, true);
@@ -119,320 +146,187 @@ const HomeScreen = () => {
     [handleSave],
   );
 
-  if (loading && !refreshing) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>Fetching latest news...</Text>
-      </View>
-    );
-  }
-
-  if (error && news.length === 0) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.errorTitle}>Oops!</Text>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={() => fetchNews(selectedCountry, selectedCategory)}
-        >
-          <Text style={styles.retryButtonText}>Try Again</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Global News</Text>
-          <Text style={styles.headerSubtitle}>Top Headlines</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.savedButton}
-          onPress={handleNavigateToSaved}
-        >
-          <Ionicons name="bookmark" size={18} color="#007AFF" />
-          <Text style={styles.savedButtonText}>Saved</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* AI Summary Button */}
-      <TouchableOpacity
-        style={styles.summaryButton}
-        onPress={handleNavigateToSummary}
-        disabled={news.length === 0}
-      >
-        <Ionicons name="sparkles" size={16} color="#ffffff" />
-        <Text style={styles.summaryButtonText}>
-          Generate Today&apos;s Summary
-        </Text>
-        <Ionicons name="chevron-forward" size={16} color="#ffffff" />
-      </TouchableOpacity>
-
-      {/* Country Filter */}
-      <View style={styles.countryRow}>
-        {COUNTRIES.map((c) => {
-          const active = selectedCountry === c.code;
-          return (
-            <TouchableOpacity
-              key={c.code}
-              style={[styles.filterChip, active && styles.filterChipActive]}
-              onPress={() => setSelectedCountry(c.code)}
-            >
-              <Text style={styles.flagText}>{c.flag}</Text>
-              <Text
-                style={[
-                  styles.filterChipText,
-                  active && styles.filterChipTextActive,
-                ]}
-              >
-                {c.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {/* Category Filter */}
+  const ListHeader = (
+    <View style={{ gap: 0 }}>
+      {/* Country pills */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={styles.categoryScroll}
-        contentContainerStyle={styles.categoryScrollContent}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 8 }}
       >
-        {CATEGORIES.map((cat) => {
-          const active = selectedCategory === cat.key;
+        {COUNTRIES.map((c) => {
+          const active = selectedCountry === c.code;
           return (
-            <TouchableOpacity
-              key={cat.key}
-              style={[styles.filterChip, active && styles.filterChipActive]}
-              onPress={() =>
-                setSelectedCategory((prev) => (prev === cat.key ? "" : cat.key))
-              }
+            <Pressable
+              key={c.code}
+              onPress={() => setSelectedCountry(c.code)}
+              style={({ pressed }) => ({
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 5,
+                paddingHorizontal: 14,
+                paddingVertical: 8,
+                borderRadius: 20,
+                backgroundColor: active
+                  ? "#007AFF"
+                  : pressed
+                  ? "#E5E5EA"
+                  : "#F2F2F7",
+                borderWidth: active ? 0 : 1,
+                borderColor: "#E5E5EA",
+              })}
             >
-              <Ionicons
-                name={cat.icon}
-                size={14}
-                color={active ? "#ffffff" : "#555"}
-                style={styles.categoryIcon}
-              />
+              <Text style={{ fontSize: 14 }}>{c.flag}</Text>
               <Text
-                style={[
-                  styles.filterChipText,
-                  active && styles.filterChipTextActive,
-                ]}
+                style={{
+                  fontSize: 13,
+                  fontWeight: "600",
+                  color: active ? "#fff" : "#3A3A3C",
+                }}
               >
-                {cat.label}
+                {c.label}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
       </ScrollView>
 
-      <FlatList
-        data={news}
-        renderItem={renderItem}
-        keyExtractor={(item, index) => item.url || index.toString()}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        initialNumToRender={10}
-        maxToRenderPerBatch={5}
-        windowSize={5}
-        removeClippedSubviews
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={["#007AFF"]}
-            tintColor="#007AFF"
-          />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              No news articles found at the moment.
+      {/* Category pills */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 14, gap: 8 }}
+      >
+        {CATEGORIES.map((cat) => {
+          const active = selectedCategory === cat.key;
+          return (
+            <Pressable
+              key={cat.key}
+              onPress={() =>
+                setSelectedCategory((prev) =>
+                  prev === cat.key ? "" : cat.key,
+                )
+              }
+              style={({ pressed }) => ({
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 5,
+                paddingHorizontal: 13,
+                paddingVertical: 7,
+                borderRadius: 20,
+                backgroundColor: active
+                  ? "#34C759"
+                  : pressed
+                  ? "#E5E5EA"
+                  : "#F2F2F7",
+                borderWidth: active ? 0 : 1,
+                borderColor: "#E5E5EA",
+              })}
+            >
+              <Ionicons
+                name={cat.icon}
+                size={13}
+                color={active ? "#fff" : "#636366"}
+              />
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: "600",
+                  color: active ? "#fff" : "#3A3A3C",
+                }}
+              >
+                {cat.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      {/* Loading/error inline indicator */}
+      {loading && (
+        <View style={{ alignItems: "center", paddingVertical: 40 }}>
+          <ActivityIndicator size="large" color="#007AFF" />
+          <Text style={{ marginTop: 12, fontSize: 15, color: "#8E8E93" }}>
+            Fetching latest news…
+          </Text>
+        </View>
+      )}
+
+      {error && news.length === 0 && !loading && (
+        <View
+          style={{
+            margin: 16,
+            padding: 20,
+            borderRadius: 18,
+            borderCurve: "continuous",
+            backgroundColor: "#FFF0F0",
+            gap: 10,
+            alignItems: "center",
+          }}
+        >
+          <Ionicons name="warning-outline" size={32} color="#FF3B30" />
+          <Text
+            style={{ fontSize: 16, fontWeight: "700", color: "#1C1C1E", textAlign: "center" }}
+          >
+            Could not load news
+          </Text>
+          <Text
+            style={{ fontSize: 14, color: "#636366", textAlign: "center" }}
+          >
+            {error}
+          </Text>
+          <Pressable
+            onPress={() => fetchNews(selectedCountry, selectedCategory)}
+            style={{ marginTop: 4, backgroundColor: "#FF3B30", paddingHorizontal: 24, paddingVertical: 10, borderRadius: 20 }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 14 }}>
+              Try Again
+            </Text>
+          </Pressable>
+        </View>
+      )}
+    </View>
+  );
+
+  return (
+    <FlatList
+      data={loading ? [] : news}
+      renderItem={renderItem}
+      keyExtractor={(item, index) => item.url || index.toString()}
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32, gap: 0 }}
+      showsVerticalScrollIndicator={false}
+      initialNumToRender={8}
+      maxToRenderPerBatch={5}
+      windowSize={5}
+      removeClippedSubviews
+      ListHeaderComponent={ListHeader}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          tintColor="#007AFF"
+          colors={["#007AFF"]}
+        />
+      }
+      ListEmptyComponent={
+        !loading ? (
+          <View
+            style={{
+              paddingVertical: 60,
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <Ionicons name="newspaper-outline" size={48} color="#C7C7CC" />
+            <Text style={{ fontSize: 16, color: "#8E8E93", textAlign: "center" }}>
+              No articles found.{"\n"}Try a different country or category.
             </Text>
           </View>
-        }
-      />
-    </SafeAreaView>
+        ) : null
+      }
+    />
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f7fa",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: "#ffffff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e1e8ed",
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#1a1a1a",
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: "#007AFF",
-    fontWeight: "600",
-    marginTop: 2,
-  },
-  savedButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: "#007AFF",
-    backgroundColor: "#f0f7ff",
-  },
-  savedButtonText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#007AFF",
-  },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 30,
-    backgroundColor: "#f5f7fa",
-  },
-  loadingText: {
-    marginTop: 15,
-    fontSize: 16,
-    color: "#5c6ac4",
-    fontWeight: "500",
-  },
-  listContent: {
-    padding: 16,
-    paddingBottom: 30,
-  },
-  errorTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#1a1a1a",
-    marginBottom: 8,
-  },
-  errorText: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    marginBottom: 24,
-    lineHeight: 22,
-  },
-  retryButton: {
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 25,
-    shadowColor: "#007AFF",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  retryButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 100,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: "#888",
-    textAlign: "center",
-  },
-  summaryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 4,
-    paddingVertical: 12,
-    borderRadius: 14,
-    backgroundColor: "#007AFF",
-    shadowColor: "#007AFF",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  summaryButtonText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#ffffff",
-    letterSpacing: 0.2,
-  },
-  countryRow: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 6,
-    backgroundColor: "#ffffff",
-    gap: 8,
-  },
-  categoryScroll: {
-    backgroundColor: "#ffffff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e1e8ed",
-  },
-  categoryScrollContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
-  },
-  filterChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: "#d0d7de",
-    backgroundColor: "#f5f7fa",
-  },
-  filterChipActive: {
-    backgroundColor: "#007AFF",
-    borderColor: "#007AFF",
-  },
-  filterChipText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#555",
-  },
-  filterChipTextActive: {
-    color: "#ffffff",
-  },
-  flagText: {
-    fontSize: 14,
-    marginRight: 5,
-  },
-  categoryIcon: {
-    marginRight: 5,
-  },
-});
 
 export default HomeScreen;
