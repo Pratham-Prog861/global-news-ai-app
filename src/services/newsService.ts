@@ -12,13 +12,19 @@ export interface NewsArticle {
   url: string;
 }
 
-export const getTopHeadlines = async (): Promise<NewsArticle[]> => {
+export const getTopHeadlines = async (
+  country: string = "us",
+  category: string = "",
+): Promise<NewsArticle[]> => {
   if (!API_KEY) {
     throw new Error("Missing EXPO_PUBLIC_NEWS_API_KEY");
   }
 
+  const params = new URLSearchParams({ country });
+  if (category) params.set("category", category);
+
   try {
-    const response = await fetch(`${BASE_URL}/top-headlines?country=us`, {
+    const response = await fetch(`${BASE_URL}/top-headlines?${params.toString()}`, {
       headers: {
         "X-Api-Key": API_KEY,
       },
