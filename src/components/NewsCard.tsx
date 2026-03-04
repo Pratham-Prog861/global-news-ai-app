@@ -170,4 +170,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default NewsCard;
+export default React.memo(NewsCard);

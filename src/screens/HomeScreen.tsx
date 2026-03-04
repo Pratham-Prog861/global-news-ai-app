@@ -74,29 +74,49 @@ const HomeScreen = () => {
     fetchNews(selectedCountry, selectedCategory);
   }, [selectedCountry, selectedCategory, fetchNews]);
 
-  const renderItem = ({ item }: { item: NewsArticle }) => (
-    <NewsCard
-      title={item.title}
-      description={item.description || "No description available"}
-      imageUrl={item.urlToImage}
-      source={item.source.name}
-      publishedAt={item.publishedAt}
-      url={item.url}
-      onSave={async () => {
-        try {
-          await saveArticle({
-            title: item.title,
-            description: item.description || "",
-            imageUrl: item.urlToImage,
-            source: item.source.name,
-            publishedAt: item.publishedAt,
-            url: item.url,
-          });
-        } catch (error) {
-          console.warn("Failed to save article", error);
-        }
-      }}
-    />
+  const handleSave = useCallback(async (item: NewsArticle) => {
+    try {
+      await saveArticle({
+        title: item.title,
+        description: item.description || "",
+        imageUrl: item.urlToImage,
+        source: item.source.name,
+        publishedAt: item.publishedAt,
+        url: item.url,
+      });
+    } catch (error) {
+      console.warn("Failed to save article", error);
+    }
+  }, []);
+
+  const handleNavigateToSaved = useCallback(() => {
+    router.push("/saved" as any);
+  }, [router]);
+
+  const handleNavigateToSummary = useCallback(() => {
+    router.push({
+      pathname: "/summary" as any,
+      params: { articles: JSON.stringify(news.slice(0, 10)) },
+    });
+  }, [news, router]);
+
+  const handleRefresh = useCallback(() => {
+    fetchNews(selectedCountry, selectedCategory, true);
+  }, [fetchNews, selectedCountry, selectedCategory]);
+
+  const renderItem = useCallback(
+    ({ item }: { item: NewsArticle }) => (
+      <NewsCard
+        title={item.title}
+        description={item.description || "No description available"}
+        imageUrl={item.urlToImage}
+        source={item.source.name}
+        publishedAt={item.publishedAt}
+        url={item.url}
+        onSave={() => handleSave(item)}
+      />
+    ),
+    [handleSave],
   );
 
   if (loading && !refreshing) {
@@ -133,7 +153,7 @@ const HomeScreen = () => {
         </View>
         <TouchableOpacity
           style={styles.savedButton}
-          onPress={() => router.push("/saved" as any)}
+          onPress={handleNavigateToSaved}
         >
           <Ionicons name="bookmark" size={18} color="#007AFF" />
           <Text style={styles.savedButtonText}>Saved</Text>
@@ -143,16 +163,13 @@ const HomeScreen = () => {
       {/* AI Summary Button */}
       <TouchableOpacity
         style={styles.summaryButton}
-        onPress={() =>
-          router.push({
-            pathname: "/summary" as any,
-            params: { articles: JSON.stringify(news.slice(0, 10)) },
-          })
-        }
+        onPress={handleNavigateToSummary}
         disabled={news.length === 0}
       >
         <Ionicons name="sparkles" size={16} color="#ffffff" />
-        <Text style={styles.summaryButtonText}>Generate Today&apos;s Summary</Text>
+        <Text style={styles.summaryButtonText}>
+          Generate Today&apos;s Summary
+        </Text>
         <Ionicons name="chevron-forward" size={16} color="#ffffff" />
       </TouchableOpacity>
 
@@ -222,10 +239,14 @@ const HomeScreen = () => {
         keyExtractor={(item, index) => item.url || index.toString()}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        initialNumToRender={10}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        removeClippedSubviews
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={() => fetchNews(selectedCountry, selectedCategory, true)}
+            onRefresh={handleRefresh}
             colors={["#007AFF"]}
             tintColor="#007AFF"
           />
