@@ -140,6 +140,22 @@ const HomeScreen = () => {
         </TouchableOpacity>
       </View>
 
+      {/* AI Summary Button */}
+      <TouchableOpacity
+        style={styles.summaryButton}
+        onPress={() =>
+          router.push({
+            pathname: "/summary" as any,
+            params: { articles: JSON.stringify(news.slice(0, 10)) },
+          })
+        }
+        disabled={news.length === 0}
+      >
+        <Ionicons name="sparkles" size={16} color="#ffffff" />
+        <Text style={styles.summaryButtonText}>Generate Today's Summary</Text>
+        <Ionicons name="chevron-forward" size={16} color="#ffffff" />
+      </TouchableOpacity>
+
       {/* Country Filter */}
       <View style={styles.countryRow}>
         {COUNTRIES.map((c) => {
@@ -325,6 +341,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#888",
     textAlign: "center",
+  },
+  summaryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 4,
+    paddingVertical: 12,
+    borderRadius: 14,
+    backgroundColor: "#007AFF",
+    shadowColor: "#007AFF",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  summaryButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#ffffff",
+    letterSpacing: 0.2,
   },
   countryRow: {
     flexDirection: "row",
