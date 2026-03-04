@@ -45,7 +45,7 @@ const HomeScreen = () => {
   const renderItem = ({ item }: { item: NewsArticle }) => (
     <NewsCard
       title={item.title}
-      description={item.description}
+      description={item.description || 'No description available'}
       imageUrl={item.urlToImage}
       source={item.source.name}
       publishedAt={item.publishedAt}
@@ -61,7 +61,7 @@ const HomeScreen = () => {
     );
   }
 
-  if (error) {
+  if (error && news.length === 0) {
     return (
       <View style={styles.center}>
         <Text style={styles.errorTitle}>Oops!</Text>
