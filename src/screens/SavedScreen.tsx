@@ -1,18 +1,13 @@
-﻿import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import React, { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Text,
-  View,
-} from "react-native";
-import NewsCard from "@/src/components/NewsCard";
+﻿import NewsCard from "@/src/components/NewsCard";
 import {
   deleteArticle,
   getSavedArticles,
   SavedArticle,
 } from "@/src/database/database";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import React, { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, FlatList, Text, View } from "react-native";
 
 const SavedScreen = () => {
   const navigation = useNavigation();
@@ -64,6 +59,7 @@ const SavedScreen = () => {
         publishedAt={item.publishedAt}
         url={item.url}
         onDelete={() => handleDelete(item.url)}
+        isSaved={true}
       />
     ),
     [handleDelete],
@@ -110,9 +106,7 @@ const SavedScreen = () => {
           >
             <Ionicons name="bookmark-outline" size={36} color="#C7C7CC" />
           </View>
-          <Text
-            style={{ fontSize: 18, fontWeight: "700", color: "#1C1C1E" }}
-          >
+          <Text style={{ fontSize: 18, fontWeight: "700", color: "#1C1C1E" }}>
             No Saved Articles
           </Text>
           <Text
@@ -123,7 +117,8 @@ const SavedScreen = () => {
               lineHeight: 22,
             }}
           >
-            Articles you save will appear here.{"\n"}Tap Save on any story to bookmark it.
+            Articles you save will appear here.{"\n"}Tap Save on any story to
+            bookmark it.
           </Text>
         </View>
       }

@@ -1,5 +1,5 @@
 const API_KEY = process.env.EXPO_PUBLIC_NEWS_API_KEY;
-const BASE_URL = "https://newsapi.org/v2";
+const BASE_URL = "https://gnews.io/api/v4";
 
 export interface NewsArticle {
   title: string;
@@ -14,58 +14,62 @@ export interface NewsArticle {
 
 export const getTopHeadlines = async (
   country: string = "us",
-  category: string = "",
+  category: string = "general",
 ): Promise<NewsArticle[]> => {
   if (!API_KEY) {
     throw new Error("Missing EXPO_PUBLIC_NEWS_API_KEY");
   }
 
-  // Include apiKey as query param for compatibility (some networks may strip headers)
   const params = new URLSearchParams({
-    country,
-    apiKey: API_KEY,
-    pageSize: "20",
+    apikey: API_KEY,
+    lang: "en",
+    country: country,
+    max: "10",
   });
-  if (category) params.set("category", category);
+
+  let endpoint = "top-headlines";
+  const gnewsCategory = category || "general";
+  params.set("category", gnewsCategory);
 
   try {
     const response = await fetch(
-      `${BASE_URL}/top-headlines?${params.toString()}`,
-      {
-        headers: {
-          "X-Api-Key": API_KEY,
-        },
-      },
+      `${BASE_URL}/${endpoint}?${params.toString()}`,
     );
 
     if (!response.ok) {
       if (response.status === 401) {
-        throw new Error("Invalid API key. Please check your configuration.");
-      }
-      if (response.status === 429) {
         throw new Error(
-          "Too many requests. Please wait a moment and try again.",
+          "Invalid API key for GNews.io. Please check your configuration.",
         );
       }
+      if (response.status === 403) {
+        throw new Error(
+          "Access forbidden. Your API key might not have permission for this request.",
+        );
+      }
+      if (response.status === 429) {
+        throw new Error("GNews limit reached. Please try again later.");
+      }
       throw new Error(
-        `Server error (${response.status}). Please try again later.`,
+        `GNews error (${response.status}). Please try again later.`,
       );
     }
 
     const data = await response.json();
 
-    if (data.status === "ok") {
-      // Filter out articles with [Removed] content (NewsAPI free-tier artifact)
-      const articles: NewsArticle[] = (data.articles ?? []).filter(
-        (a: NewsArticle) =>
-          a.title &&
-          a.title !== "[Removed]" &&
-          a.url &&
-          a.url !== "https://removed.com",
-      );
-      return articles;
+    if (data.articles) {
+      return data.articles.map((a: any) => ({
+        title: a.title,
+        description: a.description,
+        urlToImage: a.image,
+        source: {
+          name: a.source.name,
+        },
+        publishedAt: a.publishedAt,
+        url: a.url,
+      }));
     } else {
-      throw new Error(data.message || "Failed to fetch news.");
+      throw new Error(data.errors?.[0] || "Failed to fetch news from GNews.");
     }
   } catch (error: any) {
     if (
@@ -76,7 +80,7 @@ export const getTopHeadlines = async (
         "No internet connection. Please check your network and try again.",
       );
     }
-    console.error("Error fetching news:", error);
+    console.error("Error fetching news from GNews:", error);
     throw error;
   }
 };

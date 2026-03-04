@@ -13,6 +13,7 @@ interface NewsCardProps {
   url?: string;
   onSave?: () => void;
   onDelete?: () => void;
+  isSaved?: boolean;
 }
 
 const NewsCard: React.FC<NewsCardProps> = ({
@@ -24,6 +25,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
   url,
   onSave,
   onDelete,
+  isSaved,
 }) => {
   const router = useRouter();
   const formattedDate = new Date(publishedAt).toLocaleDateString("en-US", {
@@ -43,6 +45,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
         source,
         publishedAt,
         url: url ?? "",
+        isSaved: isSaved ? "true" : "false",
       },
     });
   };
@@ -146,6 +149,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
                   e.stopPropagation?.();
                   onSave();
                 }}
+                disabled={isSaved}
                 style={({ pressed }) => ({
                   flexDirection: "row",
                   alignItems: "center",
@@ -153,15 +157,27 @@ const NewsCard: React.FC<NewsCardProps> = ({
                   paddingHorizontal: 16,
                   paddingVertical: 10,
                   borderRadius: 14,
-                  backgroundColor: pressed ? "#F2F2F7" : "#F2F2F7",
+                  backgroundColor: isSaved
+                    ? "#E8F5E9"
+                    : pressed
+                      ? "#E5E5EA"
+                      : "#F2F2F7",
                   borderCurve: "continuous",
                 })}
               >
-                <Ionicons name="bookmark-outline" size={16} color="#1C1C1E" />
+                <Ionicons
+                  name={isSaved ? "bookmark" : "bookmark-outline"}
+                  size={16}
+                  color={isSaved ? "#2E7D32" : "#1C1C1E"}
+                />
                 <Text
-                  style={{ fontSize: 14, fontWeight: "600", color: "#1C1C1E" }}
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "600",
+                    color: isSaved ? "#2E7D32" : "#1C1C1E",
+                  }}
                 >
-                  Save
+                  {isSaved ? "Saved" : "Save"}
                 </Text>
               </Pressable>
             )}

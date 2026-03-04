@@ -3,7 +3,7 @@ import { saveArticle } from "@/src/database/database";
 import { getTopHeadlines, NewsArticle } from "@/src/services/newsService";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useNavigation, useRouter } from "expo-router";
+import { useFocusEffect, useNavigation, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -21,10 +21,15 @@ const COUNTRIES = [
   { code: "gb", label: "GB", flag: "🇬🇧" },
   { code: "au", label: "AU", flag: "🇦🇺" },
   { code: "ca", label: "CA", flag: "🇨🇦" },
-  { code: "de", label: "DE", flag: "🇩🇪" },
+  { code: "br", label: "BR", flag: "🇧🇷" },
+  { code: "jp", label: "JP", flag: "🇯🇵" },
+  { code: "ru", label: "RU", flag: "🇷🇺" },
 ];
 
 const CATEGORIES = [
+  { key: "general", label: "General", icon: "newspaper-outline" as const },
+  { key: "world", label: "World", icon: "globe-outline" as const },
+  { key: "nation", label: "Nation", icon: "flag-outline" as const },
   { key: "business", label: "Business", icon: "briefcase-outline" as const },
   { key: "technology", label: "Tech", icon: "laptop-outline" as const },
   { key: "sports", label: "Sports", icon: "football-outline" as const },
@@ -46,7 +51,26 @@ const HomeScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCountry, setSelectedCountry] = useState("us");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("general");
+  const [savedUrls, setSavedUrls] = useState<Set<string>>(new Set());
+
+  // Load saved articles to mark them in the UI
+  const loadSaved = useCallback(async () => {
+    try {
+      const saved = await import("@/src/database/database").then((db) =>
+        db.getSavedArticles(),
+      );
+      setSavedUrls(new Set(saved.map((a) => a.url)));
+    } catch (err) {
+      console.warn("Failed to load saved URLs", err);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadSaved();
+    }, [loadSaved]),
+  );
 
   const fetchNews = useCallback(
     async (country: string, category: string, isRefreshing = false) => {
@@ -86,7 +110,6 @@ const HomeScreen = () => {
     });
   }, [news, router]);
 
-  // Set header right (AI Summary button)
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -118,6 +141,10 @@ const HomeScreen = () => {
       if (process.env.EXPO_OS === "ios") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
+
+      // Optimistic update
+      setSavedUrls((prev) => new Set([...prev, item.url]));
+
       await saveArticle({
         title: item.title,
         description: item.description || "",
@@ -128,6 +155,12 @@ const HomeScreen = () => {
       });
     } catch (err) {
       console.warn("Failed to save article", err);
+      // Rollback if failed
+      setSavedUrls((prev) => {
+        const next = new Set(prev);
+        next.delete(item.url);
+        return next;
+      });
     }
   }, []);
 
@@ -145,9 +178,10 @@ const HomeScreen = () => {
         publishedAt={item.publishedAt}
         url={item.url}
         onSave={() => handleSave(item)}
+        isSaved={savedUrls.has(item.url)}
       />
     ),
-    [handleSave],
+    [handleSave, savedUrls],
   );
 
   const ListHeader = (
@@ -215,7 +249,9 @@ const HomeScreen = () => {
             <Pressable
               key={cat.key}
               onPress={() =>
-                setSelectedCategory((prev) => (prev === cat.key ? "" : cat.key))
+                setSelectedCategory((prev) =>
+                  prev === cat.key ? "general" : cat.key,
+                )
               }
               style={({ pressed }) => ({
                 flexDirection: "row",

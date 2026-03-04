@@ -1,5 +1,5 @@
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-3.0-flash-preview";
+const GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
 export async function POST(request: Request): Promise<Response> {
@@ -23,34 +23,42 @@ export async function POST(request: Request): Promise<Response> {
   const articlesText = top10
     .map((article, index) => {
       const title = article.title || "No title";
-      const description = article.description || "No description";
-      return `${index + 1}. Title: ${title}\n   Description: ${description}`;
+      const desc = (article.description || "").substring(0, 150);
+      return `${index + 1}. TITLE: ${title}\n   INFO: ${desc}`;
     })
     .join("\n\n");
 
-  const prompt = `You are a professional news summarizer. Based on the following news articles from today, provide a concise news brief.
+  const prompt = `You are a world-class news editor. Below are the top headlines and brief descriptions for today.
+Create a high-quality, professional "Daily News Brief" that summarizes these events into exactly 5 distinct, informative bullet points. 
 
-Format your response EXACTLY as:
-Daily News Brief:• [summary point 1]
-• [summary point 2]
-• [summary point 3]
-• [summary point 4]
-• [summary point 5]
-
-Today's articles:
+Articles context:
 ${articlesText}
 
-Summarize the key stories into exactly 5 bullet points. Each bullet point should be a clear, informative sentence.`;
+Required Format:
+Daily News Brief:
+• [informative point about major event 1]
+• [informative point about major event 2]
+• [informative point about major event 3]
+• [informative point about major event 4]
+• [informative point about major event 5]
+
+Make sure the summary is substantial and covers different topics from the articles provided.`;
 
   try {
+    const geminiController = new AbortController();
+    const geminiTimeout = setTimeout(() => geminiController.abort(), 55000);
+
     const geminiResponse = await fetch(GEMINI_API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.4, maxOutputTokens: 512 },
+        generationConfig: { maxOutputTokens: 768 },
       }),
+      signal: geminiController.signal,
     });
+
+    clearTimeout(geminiTimeout);
 
     if (!geminiResponse.ok) {
       const errorData = await geminiResponse.json().catch(() => ({}));
@@ -73,6 +81,12 @@ Summarize the key stories into exactly 5 bullet points. Each bullet point should
 
     return Response.json({ summary: summary.trim() });
   } catch (err: any) {
+    if (err.name === "AbortError") {
+      return Response.json(
+        { error: "Gemini API took too long to respond. Please try again." },
+        { status: 504 },
+      );
+    }
     return Response.json(
       { error: err.message || "Failed to contact Gemini API." },
       { status: 502 },
