@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -33,6 +33,7 @@ const CATEGORIES: { key: string; label: string; icon: CategoryIcon }[] = [
 ];
 
 const HomeScreen = () => {
+  const requestIdRef = useRef(0);
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -42,6 +43,7 @@ const HomeScreen = () => {
 
   const fetchNews = useCallback(
     async (country: string, category: string, isRefreshing = false) => {
+      const requestId = ++requestIdRef.current;
       if (isRefreshing) {
         setRefreshing(true);
       } else {
@@ -51,10 +53,13 @@ const HomeScreen = () => {
 
       try {
         const articles = await getTopHeadlines(country, category);
+        if (requestId !== requestIdRef.current) return;
         setNews(articles);
       } catch (err: any) {
+        if (requestId !== requestIdRef.current) return;
         setError(err.message || "Something went wrong while fetching news.");
       } finally {
+        if (requestId !== requestIdRef.current) return;
         setLoading(false);
         setRefreshing(false);
       }

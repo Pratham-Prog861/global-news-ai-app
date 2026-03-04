@@ -20,11 +20,11 @@ export const getTopHeadlines = async (
     throw new Error("Missing EXPO_PUBLIC_NEWS_API_KEY");
   }
 
-  let query = `country=${country}`;
-  if (category) query += `&category=${category}`;
+  const params = new URLSearchParams({ country });
+  if (category) params.set("category", category);
 
   try {
-    const response = await fetch(`${BASE_URL}/top-headlines?${query}`, {
+    const response = await fetch(`${BASE_URL}/top-headlines?${params.toString()}`, {
       headers: {
         "X-Api-Key": API_KEY,
       },
