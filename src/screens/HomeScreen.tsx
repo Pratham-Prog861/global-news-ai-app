@@ -152,7 +152,7 @@ const HomeScreen = () => {
         disabled={news.length === 0}
       >
         <Ionicons name="sparkles" size={16} color="#ffffff" />
-        <Text style={styles.summaryButtonText}>Generate Today's Summary</Text>
+        <Text style={styles.summaryButtonText}>Generate Today&apos;s Summary</Text>
         <Ionicons name="chevron-forward" size={16} color="#ffffff" />
       </TouchableOpacity>
 

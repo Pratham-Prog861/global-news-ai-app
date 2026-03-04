@@ -1,73 +1,53 @@
+import Constants from "expo-constants";
+import { Platform } from "react-native";
 import { NewsArticle } from "./newsService";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-3-flash-preview";
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+/**
+ * Returns the base URL for internal API routes.
+ * - Web: relative (empty string) — the browser resolves it automatically.
+ * - Native dev: derived from the Expo dev-server host so the API routes on
+ *   the same server are reachable from the device/simulator.
+ * - Native prod: must be set via EXPO_PUBLIC_API_URL in your environment.
+ */
+function getApiBaseUrl(): string {
+  if (Platform.OS === "web") {
+    return "";
+  }
+  if (__DEV__) {
+    const hostUri: string =
+      (Constants.expoConfig?.hostUri as string | undefined) ?? "localhost:8081";
+    const host = hostUri.split(":")[0];
+    return `http://${host}:8081`;
+  }
+  return process.env.EXPO_PUBLIC_API_URL ?? "";
+}
 
 export const summarizeArticles = async (
   articles: NewsArticle[],
 ): Promise<string> => {
   const top10 = articles.slice(0, 10);
 
-  const articlesText = top10
-    .map((article, index) => {
-      const title = article.title || "No title";
-      const description = article.description || "No description";
-      return `${index + 1}. Title: ${title}\n   Description: ${description}`;
-    })
-    .join("\n\n");
+  if (top10.length === 0) {
+    throw new Error("No articles available to summarize.");
+  }
 
-  const prompt = `You are a professional news summarizer. Based on the following news articles from today, provide a concise news brief.
+  const endpoint = `${getApiBaseUrl()}/api/ai/summarize`;
 
-Format your response EXACTLY as:
-Daily News Brief:
-• [summary point 1]
-• [summary point 2]
-• [summary point 3]
-• [summary point 4]
-• [summary point 5]
-
-Today's articles:
-${articlesText}
-
-Summarize the key stories into exactly 5 bullet points. Each bullet point should be a clear, informative sentence.`;
-
-  const response = await fetch(GEMINI_API_URL, {
+  const response = await fetch(endpoint, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            {
-              text: prompt,
-            },
-          ],
-        },
-      ],
-      generationConfig: {
-        temperature: 0.4,
-        maxOutputTokens: 512,
-      },
-    }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ articles: top10 }),
   });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(
-      errorData?.error?.message || `Gemini API error: ${response.status}`,
-    );
-  }
-
   const data = await response.json();
-  const text: string | undefined =
-    data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-  if (!text) {
-    throw new Error("No summary returned from AI.");
+  if (!response.ok) {
+    throw new Error(data?.error || `Server error: ${response.status}`);
   }
 
-  return text.trim();
+  if (!data.summary) {
+    throw new Error("No summary returned from server.");
+  }
+
+  return data.summary as string;
 };
