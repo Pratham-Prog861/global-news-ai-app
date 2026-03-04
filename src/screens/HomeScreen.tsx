@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useCallback, useEffect, useState, useRef } from "react";
+import { useRouter } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -13,6 +14,7 @@ import {
   View,
 } from "react-native";
 import NewsCard from "../components/NewsCard";
+import { saveArticle } from "../database/database";
 import { getTopHeadlines, NewsArticle } from "../services/newsService";
 
 const COUNTRIES = [
@@ -33,6 +35,7 @@ const CATEGORIES: { key: string; label: string; icon: CategoryIcon }[] = [
 ];
 
 const HomeScreen = () => {
+  const router = useRouter();
   const requestIdRef = useRef(0);
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,6 +81,17 @@ const HomeScreen = () => {
       imageUrl={item.urlToImage}
       source={item.source.name}
       publishedAt={item.publishedAt}
+      url={item.url}
+      onSave={() =>
+        saveArticle({
+          title: item.title,
+          description: item.description || "",
+          imageUrl: item.urlToImage,
+          source: item.source.name,
+          publishedAt: item.publishedAt,
+          url: item.url,
+        })
+      }
     />
   );
 
@@ -109,8 +123,17 @@ const HomeScreen = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Global News</Text>
-        <Text style={styles.headerSubtitle}>Top Headlines</Text>
+        <View>
+          <Text style={styles.headerTitle}>Global News</Text>
+          <Text style={styles.headerSubtitle}>Top Headlines</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.savedButton}
+          onPress={() => router.push("/saved" as any)}
+        >
+          <Ionicons name="bookmark" size={18} color="#007AFF" />
+          <Text style={styles.savedButtonText}>Saved</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Country Filter */}
@@ -205,6 +228,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f7fa",
   },
   header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 15,
     backgroundColor: "#ffffff",
@@ -222,6 +248,22 @@ const styles = StyleSheet.create({
     color: "#007AFF",
     fontWeight: "600",
     marginTop: 2,
+  },
+  savedButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: "#007AFF",
+    backgroundColor: "#f0f7ff",
+  },
+  savedButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#007AFF",
   },
   center: {
     flex: 1,
