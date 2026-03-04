@@ -1,22 +1,24 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import { PlatformColor } from "react-native";
+import { Platform } from "react-native";
 
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: "#007AFF",
-        tabBarInactiveTintColor: PlatformColor("secondaryLabel") as any,
+        tabBarInactiveTintColor: Platform.select({
+          ios: "#8E8E93",
+          android: "#888888",
+        }),
         tabBarStyle: {
-          borderTopColor: PlatformColor("separator") as any,
+          borderTopColor: Platform.select({
+            ios: "#C6C6C8",
+            android: "#E0E0E0",
+          }),
         },
-        headerLargeTitle: true,
-        headerTransparent: true,
+        headerShown: true,
         headerShadowVisible: false,
-        headerLargeTitleShadowVisible: false,
-        headerLargeStyle: { backgroundColor: "transparent" },
-        headerBlurEffect: "none",
       }}
     >
       <Tabs.Screen

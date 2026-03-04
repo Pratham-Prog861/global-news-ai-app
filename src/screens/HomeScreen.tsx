@@ -1,4 +1,7 @@
-﻿import { Ionicons } from "@expo/vector-icons";
+﻿import NewsCard from "@/src/components/NewsCard";
+import { saveArticle } from "@/src/database/database";
+import { getTopHeadlines, NewsArticle } from "@/src/services/newsService";
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useNavigation, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -11,9 +14,6 @@ import {
   Text,
   View,
 } from "react-native";
-import NewsCard from "@/src/components/NewsCard";
-import { saveArticle } from "@/src/database/database";
-import { getTopHeadlines, NewsArticle } from "@/src/services/newsService";
 
 const COUNTRIES = [
   { code: "us", label: "US", flag: "🇺🇸" },
@@ -30,7 +30,11 @@ const CATEGORIES = [
   { key: "sports", label: "Sports", icon: "football-outline" as const },
   { key: "health", label: "Health", icon: "heart-outline" as const },
   { key: "science", label: "Science", icon: "flask-outline" as const },
-  { key: "entertainment", label: "Entertainment", icon: "film-outline" as const },
+  {
+    key: "entertainment",
+    label: "Entertainment",
+    icon: "film-outline" as const,
+  },
 ];
 
 const HomeScreen = () => {
@@ -147,12 +151,16 @@ const HomeScreen = () => {
   );
 
   const ListHeader = (
-    <View style={{ gap: 0 }}>
+    <View style={{ gap: 0, paddingTop: 8 }}>
       {/* Country pills */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 8 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+          gap: 8,
+        }}
       >
         {COUNTRIES.map((c) => {
           const active = selectedCountry === c.code;
@@ -163,25 +171,25 @@ const HomeScreen = () => {
               style={({ pressed }) => ({
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 5,
+                gap: 6,
                 paddingHorizontal: 14,
-                paddingVertical: 8,
-                borderRadius: 20,
+                paddingVertical: 10,
+                borderRadius: 14,
                 backgroundColor: active
-                  ? "#007AFF"
+                  ? "#1C1C1E"
                   : pressed
-                  ? "#E5E5EA"
-                  : "#F2F2F7",
-                borderWidth: active ? 0 : 1,
-                borderColor: "#E5E5EA",
+                    ? "#E5E5EA"
+                    : "#F2F2F7",
+                borderCurve: "continuous",
               })}
             >
-              <Text style={{ fontSize: 14 }}>{c.flag}</Text>
+              <Text style={{ fontSize: 16 }}>{c.flag}</Text>
               <Text
                 style={{
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: "600",
-                  color: active ? "#fff" : "#3A3A3C",
+                  color: active ? "#ffffff" : "#1C1C1E",
+                  letterSpacing: -0.2,
                 }}
               >
                 {c.label}
@@ -195,7 +203,11 @@ const HomeScreen = () => {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 14, gap: 8 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingBottom: 14,
+          gap: 8,
+        }}
       >
         {CATEGORIES.map((cat) => {
           const active = selectedCategory === cat.key;
@@ -203,36 +215,33 @@ const HomeScreen = () => {
             <Pressable
               key={cat.key}
               onPress={() =>
-                setSelectedCategory((prev) =>
-                  prev === cat.key ? "" : cat.key,
-                )
+                setSelectedCategory((prev) => (prev === cat.key ? "" : cat.key))
               }
               style={({ pressed }) => ({
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 5,
-                paddingHorizontal: 13,
-                paddingVertical: 7,
-                borderRadius: 20,
+                gap: 6,
+                paddingHorizontal: 14,
+                paddingVertical: 10,
+                borderRadius: 14,
                 backgroundColor: active
-                  ? "#34C759"
+                  ? "#1C1C1E"
                   : pressed
-                  ? "#E5E5EA"
-                  : "#F2F2F7",
-                borderWidth: active ? 0 : 1,
-                borderColor: "#E5E5EA",
+                    ? "#E5E5EA"
+                    : "#F2F2F7",
+                borderCurve: "continuous",
               })}
             >
               <Ionicons
                 name={cat.icon}
-                size={13}
-                color={active ? "#fff" : "#636366"}
+                size={14}
+                color={active ? "#ffffff" : "#636366"}
               />
               <Text
                 style={{
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: "600",
-                  color: active ? "#fff" : "#3A3A3C",
+                  color: active ? "#ffffff" : "#1C1C1E",
                 }}
               >
                 {cat.label}
@@ -266,18 +275,27 @@ const HomeScreen = () => {
         >
           <Ionicons name="warning-outline" size={32} color="#FF3B30" />
           <Text
-            style={{ fontSize: 16, fontWeight: "700", color: "#1C1C1E", textAlign: "center" }}
+            style={{
+              fontSize: 16,
+              fontWeight: "700",
+              color: "#1C1C1E",
+              textAlign: "center",
+            }}
           >
             Could not load news
           </Text>
-          <Text
-            style={{ fontSize: 14, color: "#636366", textAlign: "center" }}
-          >
+          <Text style={{ fontSize: 14, color: "#636366", textAlign: "center" }}>
             {error}
           </Text>
           <Pressable
             onPress={() => fetchNews(selectedCountry, selectedCategory)}
-            style={{ marginTop: 4, backgroundColor: "#FF3B30", paddingHorizontal: 24, paddingVertical: 10, borderRadius: 20 }}
+            style={{
+              marginTop: 4,
+              backgroundColor: "#FF3B30",
+              paddingHorizontal: 24,
+              paddingVertical: 10,
+              borderRadius: 20,
+            }}
           >
             <Text style={{ color: "#fff", fontWeight: "700", fontSize: 14 }}>
               Try Again
@@ -294,7 +312,11 @@ const HomeScreen = () => {
       renderItem={renderItem}
       keyExtractor={(item, index) => item.url || index.toString()}
       contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32, gap: 0 }}
+      contentContainerStyle={{
+        paddingHorizontal: 16,
+        paddingBottom: 32,
+        gap: 0,
+      }}
       showsVerticalScrollIndicator={false}
       initialNumToRender={8}
       maxToRenderPerBatch={5}
@@ -319,7 +341,9 @@ const HomeScreen = () => {
             }}
           >
             <Ionicons name="newspaper-outline" size={48} color="#C7C7CC" />
-            <Text style={{ fontSize: 16, color: "#8E8E93", textAlign: "center" }}>
+            <Text
+              style={{ fontSize: 16, color: "#8E8E93", textAlign: "center" }}
+            >
               No articles found.{"\n"}Try a different country or category.
             </Text>
           </View>

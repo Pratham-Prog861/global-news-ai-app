@@ -52,22 +52,22 @@ const NewsCard: React.FC<NewsCardProps> = ({
       onPress={handlePress}
       style={({ pressed }) => ({
         backgroundColor: "#FFFFFF",
-        borderRadius: 18,
+        borderRadius: 24,
         borderCurve: "continuous",
-        marginBottom: 16,
+        marginBottom: 20,
         overflow: "hidden",
         boxShadow: pressed
-          ? "0 1px 4px rgba(0,0,0,0.08)"
-          : "0 2px 12px rgba(0,0,0,0.10)",
-        opacity: pressed ? 0.97 : 1,
+          ? "0 4px 12px rgba(0,0,0,0.06)"
+          : "0 8px 24px rgba(0,0,0,0.08)",
+        transform: [{ scale: pressed ? 0.98 : 1 }],
       })}
     >
       {imageUrl ? (
         <Image
           source={{ uri: imageUrl }}
-          style={{ width: "100%", height: 200 }}
+          style={{ width: "100%", height: 240 }}
           contentFit="cover"
-          transition={400}
+          transition={500}
         />
       ) : (
         <View
@@ -83,31 +83,33 @@ const NewsCard: React.FC<NewsCardProps> = ({
         </View>
       )}
 
-      <View style={{ padding: 14, gap: 8 }}>
+      <View style={{ padding: 18, gap: 10 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
           <Text
             style={{
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: "700",
-              color: "#007AFF",
+              color: "#636366",
               textTransform: "uppercase",
-              letterSpacing: 0.5,
+              letterSpacing: 1.2,
             }}
           >
             {source}
           </Text>
           <Text style={{ fontSize: 11, color: "#C7C7CC" }}>•</Text>
-          <Text style={{ fontSize: 11, color: "#8E8E93" }}>{formattedDate}</Text>
+          <Text style={{ fontSize: 12, color: "#8E8E93", fontWeight: "500" }}>
+            {formattedDate}
+          </Text>
         </View>
 
         <Text
-          numberOfLines={2}
+          numberOfLines={3}
           style={{
-            fontSize: 17,
-            fontWeight: "700",
+            fontSize: 20,
+            fontWeight: "800",
             color: "#1C1C1E",
-            lineHeight: 22,
-            letterSpacing: -0.2,
+            lineHeight: 26,
+            letterSpacing: -0.5,
           }}
         >
           {title}
@@ -116,7 +118,12 @@ const NewsCard: React.FC<NewsCardProps> = ({
         {!!description && description !== "null" && (
           <Text
             numberOfLines={2}
-            style={{ fontSize: 14, color: "#636366", lineHeight: 20 }}
+            style={{
+              fontSize: 15,
+              color: "#48484A",
+              lineHeight: 22,
+              fontWeight: "400",
+            }}
           >
             {description}
           </Text>
@@ -142,18 +149,17 @@ const NewsCard: React.FC<NewsCardProps> = ({
                 style={({ pressed }) => ({
                   flexDirection: "row",
                   alignItems: "center",
-                  gap: 5,
-                  paddingHorizontal: 14,
-                  paddingVertical: 8,
-                  borderRadius: 20,
-                  backgroundColor: pressed ? "#E5F0FF" : "#F0F7FF",
-                  borderWidth: 1.5,
-                  borderColor: "#D0E8FF",
+                  gap: 6,
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
+                  borderRadius: 14,
+                  backgroundColor: pressed ? "#F2F2F7" : "#F2F2F7",
+                  borderCurve: "continuous",
                 })}
               >
-                <Ionicons name="bookmark-outline" size={15} color="#007AFF" />
+                <Ionicons name="bookmark-outline" size={16} color="#1C1C1E" />
                 <Text
-                  style={{ fontSize: 13, fontWeight: "600", color: "#007AFF" }}
+                  style={{ fontSize: 14, fontWeight: "600", color: "#1C1C1E" }}
                 >
                   Save
                 </Text>

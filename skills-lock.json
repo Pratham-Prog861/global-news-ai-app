@@ -5,6 +5,16 @@
       "source": "expo/skills",
       "sourceType": "github",
       "computedHash": "a0316d2ce842d2dd8067a144e339cf502329dc7701f9f5122268fdb3d4c980f7"
+    },
+    "expo-app-design": {
+      "source": "skillcreatorai/ai-agent-skills",
+      "sourceType": "github",
+      "computedHash": "7d8d9e306dfb500dc70cabc49b94c97f5b3ad2084c62b0e72bb11f0fa3f4e179"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "computedHash": "516bd2154eb843a8240e43d5b285229129853114ad7075a5e141e1c08e408c84"
     }
   }
 }

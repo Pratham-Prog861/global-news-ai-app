@@ -1,14 +1,19 @@
 import ErrorBoundary from "@/src/components/ErrorBoundary";
 import { Stack } from "expo-router";
-import { PlatformColor } from "react-native";
+import { Platform, PlatformColor } from "react-native";
 
 export default function RootLayout() {
   return (
     <ErrorBoundary>
       <Stack
         screenOptions={{
-          headerTitleStyle: { color: PlatformColor("label") },
+          headerTitleStyle: {
+            color: (Platform.OS === "ios"
+              ? PlatformColor("label")
+              : "#000000") as any,
+          },
           headerBackButtonDisplayMode: "minimal",
+          headerShadowVisible: false,
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
